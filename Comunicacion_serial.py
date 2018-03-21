@@ -197,7 +197,8 @@ while running:
         if event.type == pygame.MOUSEBUTTONDOWN:
             if cursor1.colliderect(boton1.rect):
                 if Riego == 'Encendido':
-                    Riego == 0
+                    Riego = 0
+                    estado = enviar
 
             if cursor1.colliderect(boton2.rect):
                 print(Aire)
