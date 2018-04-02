@@ -2,11 +2,12 @@ import serial
 import pygame
 import time
 
-demoqe = serial.Serial('COM3', 9600, timeout=1)
+#demoqe = serial.Serial('COM3', 9600, timeout=1)
 
 
 
 # Inicializacion de variables de maquina de estado
+cabecera = str('255').encode()
 estado = 0
 recepcion = 0
 enviar =  1
@@ -21,6 +22,15 @@ pygame.init()
 pygame.mixer.init()
 screen = pygame.display.set_mode((WIDTH,HEIGHT))
 pygame.display.set_caption("DOMOTICA")
+imagenfondo = pygame.image.load('casa_azul.png').convert_alpha()
+imagentitulo = pygame.image.load('titulo.png').convert_alpha()
+imagentermometro = pygame.image.load('termometro_prueba.png').convert_alpha()
+imagencorriente = pygame.image.load('corriente_prueba.png').convert_alpha()
+imagenluzno = pygame.image.load('luz_no.png').convert_alpha()
+imagenluzmed = pygame.image.load('luz_med.png').convert_alpha()
+imagenluzhigh = pygame.image.load('luz_high.png').convert_alpha()
+imagengotanegra = pygame.image.load('gota_negra.png').convert_alpha()
+imagengotaazul = pygame.image.load('gota_azul.png').convert_alpha()
 clock = pygame.time.Clock()
 
 
@@ -32,7 +42,7 @@ RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 
-font_name = pygame.font.match_font('arial')
+font_name = pygame.font.match_font('Berlin Sans FB Demi')
 
 class Cursor(pygame.Rect):
     def __init__(self):
@@ -63,37 +73,52 @@ def draw_text(screen, text, size, x, y, color):
     surf.fill(color)
     text_rect = text_surface.get_rect()
     text_rect.center = (a/2, b/2)
-    surf.blit(text_surface,text_rect)
+    text_surface.blit(text_surface,text_rect)
     surf_rect = surf.get_rect()
     surf_rect.center = (x,y)
-    screen.blit(surf,surf_rect)
+    screen.blit(text_surface,surf_rect)
 
     return surf
 
 def draw_sensors(screen, rawstring, LDR, Hig, Mag, Aire, PWM, Riego ):
     #Dibujar temperatura interna
-    caudal = 'Caudal: %s'%(str(int(rawstring[5])))
-    draw_text(screen,caudal,16,160,120,BLUE)
-    temp1 = 'Temperatura interna: %s'%(str(int(rawstring[2])))
-    draw_text(screen,temp1,16,480,120,BLUE)
-    temp2 = 'Temperatura externa: %s'%(str(int(rawstring[3])))
-    draw_text(screen, temp2, 16, 800, 120, BLUE)
-    corriente = 'Corriente: %s'%(str(int(rawstring[4])))
-    draw_text(screen, corriente, 16, 160, 360, BLUE)
+    #caudal = 'Caudal: %s'%(str(int(rawstring[5])))
+    #draw_text(screen,caudal,16,160,120,BLUE)
+    screen.blit(imagentermometro, (0, 240))
+    screen.blit(imagencorriente, (0, 500))
+    temp1 = '%s C (Interna)'%(str(int(int(rawstring[2])*50/255)))
+    draw_text(screen, temp1, 16, 230, 300,BLUE)
+    temp2 = '%s C (Externa)'%(str(int(int(rawstring[3])*50/255)))
+    draw_text(screen, temp2, 16, 230, 350, BLUE)
+    corriente = '%s A '%(str(int(rawstring[4])))
+    draw_text(screen, corriente, 16, 230, 585, BLUE)
 
 
+    if Riego == 1:
+        screen.blit(imagengotaazul, (1120, 120))
+    else:
+        screen.blit(imagengotanegra, (1120, 120))
     riego = 'Riego: %s'%(Riego)
     rig = draw_text(screen, riego, 16, 1120, 120, BLUE)
-    boton1 = Boton(rig, 1120, 120)
+    boton1 = Boton(imagengotaazul, 1120, 120)
     aire = 'Aire: %s'%(Aire)
     air = draw_text(screen, aire, 16, 1120, 360, BLUE)
     boton2 = Boton(air, 1120, 360)
+
+    if PWM == 0:
+        screen.blit(imagenluzno, (1120, 600))
+    if PWM == 127.5:
+        screen.blit(imagenluzmed, (1120, 600))
+    if PWM == 254.5:
+        screen.blit(imagenluzhigh, (1120, 600))
     Pwm = 'PWM: %s'%(PWM)
     pwm = draw_text(screen, Pwm, 16, 1120, 600, BLUE)
-    boton3 = Boton(pwm, 1120, 600)
+    boton3 = Boton(imagenluzno, 1120, 600)
 
     return boton1, boton2, boton3
 
+PWM = 0
+Riego = '1'
 #Game loop
 
 cursor1 = Cursor()
@@ -105,16 +130,35 @@ while running:
     clock.tick(30)
 
     if estado == recepcion:
-        rawstring = demoqe.read(8)
-        rawstring = list(rawstring)
-        #rawstring = [255, 178, 255, 125, 150, 167, 100, 157, 225]
+        #rawstring = demoqe.read(8)
+        #rawstring = list(rawstring)
+        rawstring = [255, 178, 255, 125, 150, 167, PWM, 157]
         if int(rawstring[0]) == 255:
             estado = usuario
 
     if estado == enviar:
 
-        demoqe.write(salida)
+        PWM = str(PWM).encode()
+        if Riego == '1':
+            if Aire == '1':
+                Arig = 3
+            else:
+                Arig = 2
+        else:
+            if Aire == '1':
+                Arig = 1
+            else:
+                Arig = 0
+
+        Arig = str(Arig).encode()
+        demoqe.write(cabecera)
+        demoqe.write(PWM)
+        demoqe.write(Arig)
+
         estado = recepcion
+
+
+
 
     if estado == usuario:
 
@@ -158,11 +202,11 @@ while running:
         salidas_digitales = bin(salidas_digitales)
         salidas_digitales = list(salidas_digitales)
 
-        Riego = salidas_digitales[3]
+        #Riego = Riego #salidas_digitales[3]
         if Riego == '1':
-            Riego = 'Encendido'
+            Riego = 1
         else:
-            Riego = 'Apagado'
+            Riego = 0
 
         Aire = salidas_digitales[4]
         if Aire == '1':
@@ -170,13 +214,12 @@ while running:
         else:
             Aire = 'Apagado'
 
-        PWM = rawstring[7]
+        PWM = rawstring[6]
 
         #Tabla de comportamineto
 
         #LUZ = %s Higrometro: %s Puerta: %s Movimiento: %s'%(LDR,Hig,Mag,PIR,)
         Analogico = 'Temperatura 1: %s Temperatura 2: %s Corriente: %s Caudal: %s PWM: %s'%(str(int(rawstring[2])),str(int(rawstring[3])),str(int(rawstring[4])),str(int(rawstring[5])),str(int(rawstring[6])))
-
         estado = recepcion
 
     #Interfaz
@@ -186,7 +229,7 @@ while running:
 
     #Draw / render
 
-    screen.fill(BLACK)
+    screen.fill(BLUE)
     boton1, boton2, boton3 = draw_sensors(screen, rawstring, LDR, Hig, Mag, Aire, PWM, Riego)
     cursor1.update()
 
@@ -196,21 +239,30 @@ while running:
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             if cursor1.colliderect(boton1.rect):
-                if Riego == 'Encendido':
+                if Riego == 1:
                     Riego = 0
-                    estado = enviar
-
+                else:
+                    Riego = 1
+                #estado = enviar
             if cursor1.colliderect(boton2.rect):
-                print(Aire)
-                Aire = 1
+                if Aire == 'Encendido':
+                    Aire = '1'
+                else:
+                    Aire = '0'
+                #estado = enviar
             if cursor1.colliderect(boton3.rect):
-                print(PWM)
-
+                PWM = int(PWM) + 127.5
+                if PWM > 255:
+                    PWM = 0
+                #estado = enviar
         #check for closing window
         if event.type == pygame.QUIT:
             running = False
 
     #*after* drawing everthing, flip the display
+    screen.blit(imagenfondo,(440,210))
+    #screen.blit(imagentitulo,(86,0))
+
 
     pygame.display.flip()
 
