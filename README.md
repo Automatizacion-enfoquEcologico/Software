@@ -4,7 +4,7 @@ En este carpeta se encuentran los codigos asoiados a cada entrega, ademas del co
  
 Los codigo aquiimplementados poseen la siguiene descripción:
 
-+ Comunicacion_serial.py: En este modulo se implementa la aplicacion de PC, la cual se encarga de comunicarse con el microproesador y optener la informacion de los sensores, a partir e aqui la misma sigue un algoritmo que automatiza la acciones de salida deendiendo de las entradas que este recibe, toda la informacion relevante para el usuario e mostrada atravez de una inetrefaz grafica.
++ Comunicacion_serial.py: En este modulo se implementa la aplicacion de PC, la cual se encarga de comunicarse con el microproesador y obtener la informacion de los sensores, a partir e aqui la misma sigue un algoritmo que automatiza la acciones de salida deendiendo de las entradas que este recibe, toda la informacion relevante para el usuario e mostrada atravez de una inetrefaz grafica.
 
 + python_serial.py: Modulo imlementado para la primera entrega el cual fue la primera aproximamion a la hora de adquiriri los datos provenientes para la primera entrega
 
