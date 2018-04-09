@@ -2,17 +2,21 @@ import serial
 import pygame
 import time
 
-#demoqe = serial.Serial('COM3', 9600, timeout=1)
+demoqe = serial.Serial('COM3', 9600, timeout=1)
 
 
 
 # Inicializacion de variables de maquina de estado
-cabecera = str('255').encode()
+cabecera = 255
 estado = 0
 recepcion = 0
 enviar =  1
 usuario =  2
 salida = 0
+modo = 1
+cont = 0
+Inicio = 0
+Final = 0
 
 #Inicializacion de interfaz grafica
 WIDTH = 1280
@@ -29,8 +33,12 @@ imagencorriente = pygame.image.load('corriente_prueba.png').convert_alpha()
 imagenluzno = pygame.image.load('luz_no.png').convert_alpha()
 imagenluzmed = pygame.image.load('luz_med.png').convert_alpha()
 imagenluzhigh = pygame.image.load('luz_high.png').convert_alpha()
-imagengotanegra = pygame.image.load('gota_negra.png').convert_alpha()
-imagengotaazul = pygame.image.load('gota_azul.png').convert_alpha()
+imagengotanegra = pygame.image.load('gota_negra(1).png').convert_alpha()
+imagengotaazul = pygame.image.load('gota_negra.png').convert_alpha()
+imagenaireon = pygame.image.load('air-conditioner.png').convert_alpha()
+imagenaireoff = pygame.image.load('air-conditioner (1).png').convert_alpha()
+imagenmodoeco = pygame.image.load('modoeco.png').convert_alpha()
+imagenmodomanual = pygame.image.load('modomanual.png').convert_alpha()
 clock = pygame.time.Clock()
 
 
@@ -95,30 +103,90 @@ def draw_sensors(screen, rawstring, LDR, Hig, Mag, Aire, PWM, Riego ):
 
 
     if Riego == 1:
-        screen.blit(imagengotaazul, (1120, 120))
+        screen.blit(imagengotanegra, (1080, 254))
     else:
-        screen.blit(imagengotanegra, (1120, 120))
+        screen.blit(imagengotaazul, (1080, 254))
     riego = 'Riego: %s'%(Riego)
-    rig = draw_text(screen, riego, 16, 1120, 120, BLUE)
-    boton1 = Boton(imagengotaazul, 1120, 120)
+    #rig = draw_text(screen, riego, 16, 1120, 295, BLUE)
+    boton1 = Boton(imagengotaazul, 1120, 295)
+
+    if Aire == 1:
+        screen.blit(imagenaireoff, (1080, 408))
+    else:
+        screen.blit(imagenaireon, (1080, 408))
     aire = 'Aire: %s'%(Aire)
-    air = draw_text(screen, aire, 16, 1120, 360, BLUE)
-    boton2 = Boton(air, 1120, 360)
+    #air = draw_text(screen, aire, 16, 1120, 450, BLUE)
+    boton2 = Boton(imagenaireoff, 1120, 450)
 
     if PWM == 0:
-        screen.blit(imagenluzno, (1120, 600))
-    if PWM == 127.5:
-        screen.blit(imagenluzmed, (1120, 600))
-    if PWM == 254.5:
-        screen.blit(imagenluzhigh, (1120, 600))
-    Pwm = 'PWM: %s'%(PWM)
-    pwm = draw_text(screen, Pwm, 16, 1120, 600, BLUE)
+        screen.blit(imagenluzno, (1080, 554))
+    if PWM == 127:
+        screen.blit(imagenluzmed, (1080, 554))
+    if PWM == 254:
+        screen.blit(imagenluzhigh, (1080, 554))
+    #Pwm = 'PWM: %s'%(PWM)
+    #pwm = draw_text(screen, Pwm, 16, 1120, 600, BLUE)
     boton3 = Boton(imagenluzno, 1120, 600)
 
-    return boton1, boton2, boton3
+    if modo == 0:
+        screen.blit(imagenmodoeco, (720,554))
+    if modo == 1:
+        screen.blit(imagenmodomanual, (720,554))
+    boton4 = Boton(imagenmodomanual,760,600)
 
-PWM = 0
-Riego = '1'
+    return boton1, boton2, boton3, boton4
+
+def regar(Hig, LDR, Riego, estado):
+    if LDR == 'MED' or LDR == 'LOW':
+        if Hig == 'Regar':
+            Riego = 1
+            estado = 1
+        else:
+            estado = 0
+    else:
+        estado = 0
+    return estado, Riego
+
+def luces(Pir, PWM, estado):
+    global cont
+    global Inicio
+    global Final
+    Tiempo = 15
+    if Pir == 'ACT':
+        if PWM == 0:
+            PWM = 175
+    else:
+        if cont == 0:
+            cont = 1
+            Inicio = time.time()
+        Final = time.time()
+        if round(Final - Inicio,0)>Tiempo:
+            PWM = 0
+            cont = 0
+    estado = 1
+    return PWM, estado
+
+
+def aircon(Pir, Aire, estado):
+    global cont
+    global Inicio
+    global Final
+    Tiempo = 14
+    if Pir == 'ACT':
+        if Aire == 1:
+            Aire = 0
+    else:
+        if cont == 0:
+            cont = 1
+            Inicio = time.time()
+        Final = time.time()
+        print(round(Final - Inicio, 0))
+        if round(Final - Inicio, 0) > Tiempo:
+            Aire = 1
+    estado = 1
+
+    return Aire, estado
+
 #Game loop
 
 cursor1 = Cursor()
@@ -127,36 +195,32 @@ running = True
 
 while running:
 
-    clock.tick(30)
+
 
     if estado == recepcion:
-        #rawstring = demoqe.read(8)
-        #rawstring = list(rawstring)
-        rawstring = [255, 178, 255, 125, 150, 167, PWM, 157]
+        rawstring = demoqe.read(8)
+        rawstring = list(rawstring)
+        #rawstring = [255, 178, 255, 125, 150, 167, PWM, 157]
         if int(rawstring[0]) == 255:
             estado = usuario
 
     if estado == enviar:
-
-        PWM = str(PWM).encode()
-        if Riego == '1':
-            if Aire == '1':
+        if Riego == 1:
+            if Aire == 1:
                 Arig = 3
             else:
                 Arig = 2
         else:
-            if Aire == '1':
+            if Aire == 1:
                 Arig = 1
             else:
                 Arig = 0
 
-        Arig = str(Arig).encode()
-        demoqe.write(cabecera)
-        demoqe.write(PWM)
-        demoqe.write(Arig)
+        mensaje = bytearray([cabecera, PWM, Arig])
+        print(mensaje)
+        demoqe.write(mensaje)
 
         estado = recepcion
-
 
 
 
@@ -202,7 +266,8 @@ while running:
         salidas_digitales = bin(salidas_digitales)
         salidas_digitales = list(salidas_digitales)
 
-        #Riego = Riego #salidas_digitales[3]
+
+        Riego = salidas_digitales[3]
         if Riego == '1':
             Riego = 1
         else:
@@ -210,27 +275,30 @@ while running:
 
         Aire = salidas_digitales[4]
         if Aire == '1':
-            Aire = 'Encendido'
+            Aire = 1
+
         else:
-            Aire = 'Apagado'
+            Aire = 0
 
         PWM = rawstring[6]
 
+        estado = recepcion
+
         #Tabla de comportamineto
+        if modo == 0:
+
+            estado, Riego = regar(Hig, LDR, Riego, estado)
+            PWM, estado = luces(PIR, PWM, estado)
+            Aire, estado = aircon(PIR, Aire, estado)
+
 
         #LUZ = %s Higrometro: %s Puerta: %s Movimiento: %s'%(LDR,Hig,Mag,PIR,)
         Analogico = 'Temperatura 1: %s Temperatura 2: %s Corriente: %s Caudal: %s PWM: %s'%(str(int(rawstring[2])),str(int(rawstring[3])),str(int(rawstring[4])),str(int(rawstring[5])),str(int(rawstring[6])))
-        estado = recepcion
-
-    #Interfaz
-
-    #Update
-
 
     #Draw / render
 
     screen.fill(BLUE)
-    boton1, boton2, boton3 = draw_sensors(screen, rawstring, LDR, Hig, Mag, Aire, PWM, Riego)
+    boton1, boton2, boton3, boton4 = draw_sensors(screen, rawstring, LDR, Hig, Mag, Aire, PWM, Riego)
     cursor1.update()
 
     #Process input
@@ -238,34 +306,40 @@ while running:
     for event in pygame.event.get():
 
         if event.type == pygame.MOUSEBUTTONDOWN:
-            if cursor1.colliderect(boton1.rect):
-                if Riego == 1:
-                    Riego = 0
+            if modo == 1:
+                if cursor1.colliderect(boton1.rect):
+                    if Riego == 1:
+                        Riego = 0
+                    else:
+                        Riego = 1
+                    estado = enviar
+                if cursor1.colliderect(boton2.rect):
+                    if Aire == 1:
+                        Aire = 0
+                    else:
+                        Aire = 1
+                    estado = enviar
+                if cursor1.colliderect(boton3.rect):
+                    PWM = int(PWM) + 127
+                    if PWM > 254:
+                        PWM = 0
+                    estado = enviar
+            if cursor1.colliderect(boton4.rect):
+                if modo == 0:
+                    modo = 1
                 else:
-                    Riego = 1
-                #estado = enviar
-            if cursor1.colliderect(boton2.rect):
-                if Aire == 'Encendido':
-                    Aire = '1'
-                else:
-                    Aire = '0'
-                #estado = enviar
-            if cursor1.colliderect(boton3.rect):
-                PWM = int(PWM) + 127.5
-                if PWM > 255:
-                    PWM = 0
-                #estado = enviar
+                    modo = 0
+
         #check for closing window
+
         if event.type == pygame.QUIT:
             running = False
 
     #*after* drawing everthing, flip the display
-    screen.blit(imagenfondo,(440,210))
-    #screen.blit(imagentitulo,(86,0))
-
-
+    screen.blit(imagenfondo, (440, 210))
+    screen.blit(imagentitulo, (86, 0))
     pygame.display.flip()
 
-
+demoqe.close()
 pygame.quit()
-#demoqe.close()
+
