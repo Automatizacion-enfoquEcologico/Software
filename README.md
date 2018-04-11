@@ -17,9 +17,6 @@ La aplicación fue desarrollada y probada en Windows 10 - 64 bits.
 ## Software
 El desarrollo de la aplicacion fue realizado en el entorno PyCharm 2017.3.3.    
 
-## License
-Copyright (c) 2017-2018 Fedora Di Polo - Eugenio MartínezReleased under the [GNU GPLv3.0 License](LICENSE). 
-
 # Sofware variado:
 
 + python_serial.py: Modulo imlementado para la primera entrega el cual fue la primera aproximamion a la hora de adquiriri los datos provenientes para la primera entrega
