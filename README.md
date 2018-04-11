@@ -1,4 +1,4 @@
-# Software
+## Software
 
 En este carpeta se encuentran los codigos asoiados a cada entrega, ademas del codigo principal del proyecto el cual consta de la interfaz de ususario y la comunicacion con el micro. Toda esta parte del proyecto se encuentra implemnetada en python    
  
@@ -13,3 +13,5 @@ Los codigo aquiimplementados poseen la siguiene descripción:
 + Grafica_online.py: La señal proveniente del generador de funciones muestreada a 2kHz con una frecuencia de 1Khz adquirida por el microprocesador es procesada graficada en la pantalla de la computadora en tiempo pseudo real, es decir se ve de manera acontinua aunque obviamente los datos no se muestran en tiempo real.   
 
 + Enviar_datos.py: Codigo impementado para realizar envio de paquetes al microprocesador, como una primera aproximcion, para posteriormente en el modulo principla activar las salidas del sistema.    
+
+# 
